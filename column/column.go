@@ -6,13 +6,13 @@ import (
 )
 
 type Column struct {
-	Name   string
+	Header   string
 	Id     int
 	Type   Type.Type
 	Values []int
 }
 
-func (c *Column) toString() string {
+func (c *Column) ToString() string {
 	values := ""
 	for i := 0; i < len(c.Values); i++ {
 		// Converts int to string
@@ -21,9 +21,9 @@ func (c *Column) toString() string {
 			values += "\n"
 		}
 	}
-	return c.Name + "\n" + values
+	return c.Header + "\n" + values
 }
 
-func (c *Column) getName() string {
-	return c.Name
+func (c *Column) GetHeader() string {
+	return c.Header
 }

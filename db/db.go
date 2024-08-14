@@ -7,10 +7,10 @@ type DB struct {
 	Tables []table.Table
 }
 
-func (db *DB) toString() string {
+func (db *DB) ToString() string {
 	databases := ""
 	for i := 0; i < len(db.Tables); i++ {
-		databases += db.Tables[i].toString() + "\n"
+		databases += db.Tables[i].ToString() + "\n"
 	}
 	return db.Name + "\n\n" + databases
 }
