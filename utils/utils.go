@@ -1,5 +1,9 @@
 package utils
 
+import (
+	"github.com/awaisamjad/db/Type"
+)
+
 func Gap(width uint32) string {
 	gap := ""
 	for i := 0; i < int(width); i++ {
@@ -18,7 +22,7 @@ func Contains[T comparable](slice []T, element T) bool {
 }
 
 // This returns a set so same_values isnt ordered
-//TODO look at how ordering should work
+// TODO look at how ordering should work
 func SameValues[T comparable](slice1 []T, slice2 []T) []T {
 	same_values_set := make(map[T]struct{})
 	for i := 0; i < len(slice1); i++ {
@@ -37,4 +41,21 @@ func SameValues[T comparable](slice1 []T, slice2 []T) []T {
 	}
 
 	return same_values
+}
+
+func CheckValueType(value interface{}) Type.Type {
+	switch value.(type) {
+	case int:
+		return Type.INTEGER
+	case float64:
+		return Type.FLOAT
+	case string:
+		return Type.STRING
+	case rune:
+		return Type.CHAR
+
+	//! Default should maybe be changed to nil and then handle error
+	default:
+		return ""
+	}
 }

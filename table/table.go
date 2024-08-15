@@ -16,6 +16,95 @@ type Table struct {
 	Columns []column.Column
 }
 
+func New(name string, id int, columns []column.Column) (*Table, error) {
+	table := &Table{
+		Name:    name,
+		Id:      id,
+		Columns: columns,
+	}
+	if err := table.Validate(); err != nil {
+		return nil, err
+	}
+	return table, nil
+}
+
+// This is done as we cant fill empty data values with nil so these are the nil replacements
+// ! This means these values cant really be used as they may mean nil or 0/0.0/""
+// TODO Fix
+func getZeroValue(t Type.Type) interface{} {
+	switch t {
+	case Type.INTEGER:
+		return 0
+	case Type.FLOAT:
+		return 0.0
+	case Type.STRING, Type.CHAR:
+		return ""
+	default:
+		return nil
+	}
+}
+
+// ~ Performs necessary checks on a table
+func (t *Table) Validate() error {
+	//? Makes sure none of the fields are empty
+	if t.Name == "" || strconv.Itoa(t.Id) == "" || len(t.Columns) == 0 {
+		return fmt.Errorf("fields arent correct")
+	}
+
+	//? Makes sure the Values are the correct type i.e. they match the Type field
+	for i := 0; i < len(t.Columns); i++ {
+		for j := 0; j < len(t.Columns[i].Values); j++ {
+			value := t.Columns[i].Values[j]
+			if utils.CheckValueType(value) != t.Columns[i].Type {
+				return fmt.Errorf("The values arent all the same type")
+			}
+		}
+	}
+
+	//? Makes sure all the columns have same number of values in the column
+	//~ If not it fills them with nil values
+
+	maxLength := len(t.Columns[0].Values)
+	for _, col := range t.Columns {
+		if len(col.Values) > maxLength {
+			maxLength = len(col.Values)
+		}
+	}
+
+	// Pad columns with nil values if they are shorter than maxLength
+	//TODO finish this. problem with zeroValue
+	// for i := range t.Columns {
+	// 	zeroValue := getZeroValue(t.Columns[i].Type)
+	// 	for len(t.Columns[i].Values) < maxLength {
+	// 		t.Columns[i].Values = append(t.Columns[i].Values, zeroValue)
+	// 	}
+	// }
+
+	return nil
+}
+
+func (t *Table) AddColumn(c column.Column) {
+	t.Columns = append(t.Columns, c)
+}
+
+func (t *Table) AddColumns(c []column.Column) {
+	for i := 0; i < len(c); i++ {
+		t.Columns = append(t.Columns, c[i])
+	}
+}
+
+func (t *Table) AddRow(row []string) error {
+	if len(t.Columns) != len(row) {
+		return fmt.Errorf("Length of rows doesnt match number of columns")
+	}
+
+	// for i := 0; i < len(t.Columns); i++ {
+	// 	t.Columns[i].Values = append(t.Columns[i].Values, row[i].toValueType())
+	// }
+
+	return nil
+}
+
 func (t *Table) ToString() string {
 	table := ""
 	max_lengths_of_each_column := make([]int, len(t.Columns))
@@ -60,6 +149,7 @@ func (t *Table) GetHeaders() []string {
 	return headers
 }
 
+// * Join functions
 func (table1 *Table) InnerJoin(table2 Table, header string) (Table, error) {
 	//TODO make sure the size of the tables matches
 	if !utils.Contains(table1.GetHeaders(), header) && !utils.Contains(table2.GetHeaders(), header) {
