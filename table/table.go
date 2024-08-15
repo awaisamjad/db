@@ -17,15 +17,16 @@ type Table struct {
 }
 
 func New(name string, id int, columns []column.Column) (*Table, error) {
-	table := &Table{
+	for _, col := range columns {
+		if err := col.Validate(); err != nil {
+			return nil, fmt.Errorf("invalid column %s: %v", col.Header, err)
+		}
+	}
+	return &Table{
 		Name:    name,
 		Id:      id,
 		Columns: columns,
-	}
-	if err := table.Validate(); err != nil {
-		return nil, err
-	}
-	return table, nil
+	}, nil
 }
 
 // This is done as we cant fill empty data values with nil so these are the nil replacements
@@ -52,24 +53,24 @@ func (t *Table) Validate() error {
 	}
 
 	//? Makes sure the Values are the correct type i.e. they match the Type field
-	for i := 0; i < len(t.Columns); i++ {
-		for j := 0; j < len(t.Columns[i].Values); j++ {
-			value := t.Columns[i].Values[j]
-			if utils.CheckValueType(value) != t.Columns[i].Type {
-				return fmt.Errorf("The values arent all the same type")
-			}
-		}
-	}
+	// for i := 0; i < len(t.Columns); i++ {
+	// 	for j := 0; j < len(t.Columns[i].Values); j++ {
+	// 		value := t.Columns[i].Values[j]
+	// 		if utils.CheckValueType(value) != t.Columns[i].Type {
+	// 			return fmt.Errorf("The values arent all the same type")
+	// 		}
+	// 	}
+	// }
 
 	//? Makes sure all the columns have same number of values in the column
 	//~ If not it fills them with nil values
 
-	maxLength := len(t.Columns[0].Values)
-	for _, col := range t.Columns {
-		if len(col.Values) > maxLength {
-			maxLength = len(col.Values)
-		}
-	}
+	// maxLength := len(t.Columns[0].Values)
+	// for _, col := range t.Columns {
+	// 	if len(col.Values) > maxLength {
+	// 		maxLength = len(col.Values)
+	// 	}
+	// }
 
 	// Pad columns with nil values if they are shorter than maxLength
 	//TODO finish this. problem with zeroValue
@@ -109,20 +110,74 @@ func (t *Table) ToString() string {
 	table := ""
 	max_lengths_of_each_column := make([]int, len(t.Columns))
 
-	// Gets the max len of all values in the column inc name
+	//? Gets the max len of all values in the column inc name
 	for i := 0; i < len(t.Columns); i++ {
 		// Make the default max length the name of column. if any values len is greater change variable value
 		max_length_value := t.Columns[i].Header
-		for _, v := range t.Columns[i].Values {
-			value_string := strconv.Itoa(v)
-			if len(value_string) > len(max_length_value) {
-				max_length_value = value_string
+	
+		switch t.Columns[i].Type {
+		case Type.INTEGER:
+			values, ok := t.Columns[i].Values.([]int)
+			if !ok {
+				//TODO Handle the error case where Values is not of type []int
+				continue
 			}
+			for _, v := range values {
+				value_string := strconv.Itoa(v)
+				if len(value_string) > len(max_length_value) {
+					max_length_value = value_string
+				}
+				fmt.Println(value_string)
+			}
+		case Type.STRING:
+			values, ok := t.Columns[i].Values.([]string)
+			if !ok {
+				// Handle the error case where Values is not of type []string
+				continue
+			}
+			for _, v := range values {
+				if len(v) > len(max_length_value) {
+					max_length_value = v
+				}
+				fmt.Println(v)
+			}
+		//? As CHAR is one character it doesnt need to be handled
+		//! Assumption
+		//TODO Handle just in case
+		// case Type.CHAR:
+		// 	values, ok := t.Columns[i].Values.([]rune)
+		// 	if !ok {
+		// 		// Handle the error case where Values is not of type []string
+		// 		continue
+		// 	}
+		// 	for _, v := range values {
+		// 		if len(v) > len(max_length_value) {
+		// 			max_length_value = v
+		// 		}
+		// 		fmt.Println(v)
+		// 	}
+		case Type.FLOAT:
+			values, ok := t.Columns[i].Values.([]float64)
+			if !ok {
+				// Handle the error case where Values is not of type []string
+				continue
+			}
+			for _, v := range values {
+				//! No idea how the FormatFloat function works
+				value_string := strconv.FormatFloat(v, 'f', -1, 64)
+				if len(value_string) > len(max_length_value) {
+					max_length_value = value_string
+				}
+				fmt.Println(value_string)
+			}
+		default:
+			fmt.Println("Unsupported column type")
 		}
+	
 		max_lengths_of_each_column[i] = len(max_length_value)
 	}
 
-	// Add column names to the table string
+	//? Add column names to the table string
 	for i := 0; i < len(t.Columns); i++ {
 		table += t.Columns[i].Header + utils.Gap(uint32(max_lengths_of_each_column[i]-len(t.Columns[i].Header)+3))
 	}
@@ -130,16 +185,40 @@ func (t *Table) ToString() string {
 
 	// Add values of each column to the table string
 	width := 3
-	for i := 0; i < len(t.Columns[0].Values); i++ {
+	//* this should work as the length of all columns should be the same
+	//! Check if this check does occur before
+	len_of_values := len(t.Columns[0].Values.([]float64))
+
+	for i := 0; i < len_of_values; i++ {
 		for j := 0; j < len(t.Columns); j++ {
-			value := strconv.Itoa(t.Columns[j].Values[i])
-			table += value + utils.Gap(uint32(max_lengths_of_each_column[j]-len(value)+width))
+			// Get the length of each value. As it is an interface it requires a case switch on its type
+			values, ok := t.Columns[j].Values.([]interface{})
+			if !ok {
+				// Handle the error case where Values is not of type []interface{}
+				continue
+			}
+			value := values[i]
+			var value_conv string
+			switch v := value.(type) {
+			case int:
+				value_conv = strconv.Itoa(v)
+			case float64:
+				value_conv = strconv.FormatFloat(v, 'f', -1, 64)
+			case string:
+				value_conv = v
+			default:
+				value_conv = ""
+			}
+			table += value_conv + utils.Gap(uint32(max_lengths_of_each_column[j]-len(value_conv)+width))
 		}
 		table += "\n" // New line after each row
 	}
 
 	return t.Name + "\n\n" + table
+	// return fmt.Sprintf("Table Name: %s, Id: %d, Columns: %v", t.Name, t.Id, t.Columns)
 }
+
+
 
 func (t *Table) GetHeaders() []string {
 	headers := make([]string, len(t.Columns))
