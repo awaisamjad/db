@@ -1,7 +1,9 @@
 package utils
 
 import (
-	"github.com/awaisamjad/db/Type"
+	"fmt"
+
+	"github.com/awaisamjad/db/DataType"
 )
 
 func Gap(width uint32) string {
@@ -43,19 +45,54 @@ func SameValues[T comparable](slice1 []T, slice2 []T) []T {
 	return same_values
 }
 
-func CheckValueType(value interface{}) Type.Type {
+// ? Checks to see if the type for the values is at most one of DataType
+func IsTypeForValuesValid[T any](datatype DataType.DataType, values []T) error {
+	if len(values) == 0 {
+		return fmt.Errorf("empty values slice")
+	}
+
+	var checkType func(T) bool
+	var expectedType string
+
+	switch datatype {
+	case DataType.INTEGER:
+		checkType = func(v T) bool { _, ok := any(v).(int); return ok }
+		expectedType = "int"
+	case DataType.FLOAT:
+		checkType = func(v T) bool { _, ok := any(v).(float64); return ok }
+		expectedType = "float64"
+	case DataType.STRING:
+		checkType = func(v T) bool { _, ok := any(v).(string); return ok }
+		expectedType = "string"
+	case DataType.CHAR:
+		checkType = func(v T) bool { _, ok := any(v).(rune); return ok }
+		expectedType = "string"
+	default:
+		return fmt.Errorf("unknown DataType")
+	}
+
+	for i, v := range values {
+		if !checkType(v) {
+			return fmt.Errorf("type mismatch at index %d: expected %s for %v type", i, expectedType, datatype)
+		}
+	}
+
+	return nil
+}
+
+func GetValueType(value interface{}) (DataType.DataType, error) {
 	switch value.(type) {
 	case int:
-		return Type.INTEGER
+		return DataType.INTEGER, nil
 	case float64:
-		return Type.FLOAT
+		return DataType.FLOAT, nil
 	case string:
-		return Type.STRING
+		return DataType.STRING, nil
 	case rune:
-		return Type.CHAR
+		return DataType.CHAR, nil
 
 	//! Default should maybe be changed to nil and then handle error
 	default:
-		return ""
+		return DataType.UNKNOWN, fmt.Errorf("type not valid")
 	}
 }

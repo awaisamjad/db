@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/awaisamjad/db/Type"
+	"github.com/awaisamjad/db/DataType"
 	"github.com/awaisamjad/db/column"
 	"github.com/awaisamjad/db/utils"
 )
@@ -32,13 +32,13 @@ func New(name string, id int, columns []column.Column) (*Table, error) {
 // This is done as we cant fill empty data values with nil so these are the nil replacements
 // ! This means these values cant really be used as they may mean nil or 0/0.0/""
 // TODO Fix
-func getZeroValue(t Type.Type) interface{} {
+func getZeroValue(t DataType.DataType) interface{} {
 	switch t {
-	case Type.INTEGER:
+	case DataType.INTEGER:
 		return 0
-	case Type.FLOAT:
+	case DataType.FLOAT:
 		return 0.0
-	case Type.STRING, Type.CHAR:
+	case DataType.STRING, DataType.CHAR:
 		return ""
 	default:
 		return nil

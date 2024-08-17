@@ -4,19 +4,37 @@ import (
 	"fmt"
 	// "strconv"
 
-	"github.com/awaisamjad/db/Type"
+	"github.com/awaisamjad/db/DataType"
+	"github.com/awaisamjad/db/utils"
+
 )
 
-type Column struct {
+type Column[T DataType.AllowedTypes] struct {
 	Header string
 	Id     int
-	Type   Type.Type
-	Values interface{}
+	Type   DataType.DataType
+	Values []T
 }
 
-func New(header string, id int, Type Type.Type, values )
+func New [T DataType.AllowedTypes ] (header string, id int, Type DataType.DataType, values []T) (*Column[T], error) {
+	column := &Column[T]{
+		Header: header,
+		Id: id,
+		Type: Type,
+		Values: values,
+	}
+	
+	err := column.Validate()
 
-func (c *Column) ToString() string {
+	if err != nil {
+		return nil, fmt.Errorf("error creating column: %v", err)
+	}
+
+	return column, nil
+}
+
+func (c *Column[T]) ToString() string {
+
 	// values := ""
 	// for i := 0; i < len(c.Values); i++ {
 	// 	// Converts int to string
@@ -27,33 +45,23 @@ func (c *Column) ToString() string {
 	// }
 	// return c.Header + "\n" + values
 	return fmt.Sprintf("Header: %s, Id: %d, Type: %s, Values: %v", c.Header, c.Id, c.Type, c.Values)
-
 }
 
-func (c *Column) GetHeader() string {
+func (c *Column[T]) GetHeader() string {
 	return c.Header
 }
 
-func (c *Column) Validate() error {
-	switch c.Type {
-	case Type.INTEGER:
-		if _, ok := c.Values.([]int); !ok {
-			return fmt.Errorf("values must be of type []int for INTEGER column")
-		}
-	case Type.FLOAT:
-		if _, ok := c.Values.([]float64); !ok {
-			return fmt.Errorf("values must be of type []float64 for FLOAT column")
-		}
-	case Type.STRING:
-		if _, ok := c.Values.([]string); !ok {
-			return fmt.Errorf("values must be of type []string for STRING column")
-		}
-	case Type.CHAR:
-		if _, ok := c.Values.([]rune); !ok {
-			return fmt.Errorf("values must be of type []rune for CHAR column")
-		}
-	default:
-		return fmt.Errorf("unknown column type")
+func (c *Column[T]) Validate() error {
+
+	if len(c.Values) < 1 {
+		return fmt.Errorf("invalid length of column")
 	}
+
+	isTypeValid := utils.IsTypeForValuesValid(c.Type, c.Values)	
+	if isTypeValid != nil {
+		return fmt.Errorf("DataType Field and type for Values Field do not match")
+	}
+
+
 	return nil
 }
