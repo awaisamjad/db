@@ -14,6 +14,8 @@ type Column struct {
 	Values interface{}
 }
 
+func New(header string, id int, Type Type.Type, values )
+
 func (c *Column) ToString() string {
 	// values := ""
 	// for i := 0; i < len(c.Values); i++ {

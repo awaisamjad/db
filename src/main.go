@@ -21,8 +21,8 @@ func main() {
 		{
 			Header: "Column 2",
 			Id:     2,
-			Type:   Type.CHAR,
-			Values: []rune{'a'},
+			Type:   Type.INTEGER,
+			Values: []int{10,20,30,40,50,60},
 		},
 		{
 			Header: "Column 3",
