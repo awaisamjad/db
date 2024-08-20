@@ -33,18 +33,17 @@ func New [T DataType.AllowedTypes ] (header string, id int, Type DataType.DataTy
 	return column, nil
 }
 
-func (c *Column[T]) ToString() string {
 
-	// values := ""
-	// for i := 0; i < len(c.Values); i++ {
-	// 	// Converts int to string
-	// 	values += strconv.Itoa(c.Values[i])
-	// 	if i < len(c.Values)-1 {
-	// 		values += "\n"
-	// 	}
-	// }
-	// return c.Header + "\n" + values
-	return fmt.Sprintf("Header: %s, Id: %d, Type: %s, Values: %v", c.Header, c.Id, c.Type, c.Values)
+
+func (c *Column[T]) ToString() string {
+	values := ""
+	for i := 0; i < len(c.Values); i++ {
+		values += fmt.Sprintf("%v", c.Values[i])
+		if i < len(c.Values)-1 {
+			values += "\n"
+		}
+	}
+	return c.Header + "\n" + values
 }
 
 func (c *Column[T]) GetHeader() string {

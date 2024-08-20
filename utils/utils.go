@@ -80,7 +80,8 @@ func IsTypeForValuesValid[T any](datatype DataType.DataType, values []T) error {
 	return nil
 }
 
-func GetValueType(value interface{}) (DataType.DataType, error) {
+//? If we have the go builtin type of a value this returns the DataType value
+func GetDataTypeFromBuiltinType(value interface{}) (DataType.DataType, error) {
 	switch value.(type) {
 	case int:
 		return DataType.INTEGER, nil
